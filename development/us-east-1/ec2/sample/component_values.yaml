@@ -1,0 +1,6 @@
+---
+# Name of ec2
+name: sample
+
+# Prefix to be added to created resources
+prefix: ec2
