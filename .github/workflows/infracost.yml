@@ -22,7 +22,7 @@ jobs:
       matrix:
         environment: [development]
         region: [us-east-1]
-        resources: [eks/dev]
+        resources: [ec2-instances/sample]
   
     steps:
       - name: Setup Infracost
