@@ -36,11 +36,9 @@ terraform.rc
 
 # Others
 .terragrunt-cache
-kubeconfig*
 .terraform
 .terraform.lock.hcl
 .vscode
-EKSIPs
 extra_values.yaml
 kubeconfig_bas64
 .infracost
