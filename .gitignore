@@ -39,6 +39,5 @@ terraform.rc
 .terraform
 .terraform.lock.hcl
 .vscode
-extra_values.yaml
 kubeconfig_bas64
 .infracost
