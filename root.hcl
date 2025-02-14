@@ -4,10 +4,10 @@ remote_state {
   backend = "s3"
 
   config = {
-    bucket         = "tfstates-${local.merged.env}-tg-store"
-    key            = "${local.merged.provider}/${path_relative_to_include()}/terraform.tfstate"
-    region         = local.merged.aws_region
-    encrypt        = true
+    bucket  = "tfstates-${local.merged.env}-tg-store"
+    key     = "${local.merged.provider}/${path_relative_to_include()}/terraform.tfstate"
+    region  = local.merged.aws_region
+    encrypt = true
     # dynamodb_table = "${local.merged.prefix}-${local.merged.name}-tg-state-lock"
   }
 
