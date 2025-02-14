@@ -6,13 +6,14 @@ on:
     types: [opened, synchronize, closed]
   push:
     branches:
-      - develop
+      - main
     # paths:
     #   - 'development/**'
 
 jobs:
   infracost:
     name: Infracost
+    if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize')
     runs-on: ubuntu-latest   
     permissions:
       contents: read
@@ -64,3 +65,50 @@ jobs:
             --github-token=${{ github.token }} \
             --pull-request=${{ github.event.pull_request.number }} \
             --behavior=update
+
+  # Run Infracost on default branch and update Infracost Cloud
+  infracost-default-branch-update:
+    # If you use private modules, or store Terraform variables or modules in a 3rd party
+    # such as TFC or Spacelift, include the same steps/variables as the infracost-pull-request-checks job
+    name: Infracost Default Branch Update
+    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          version: 0.10.39
+
+      - name: Checkout main/master branch
+        uses: actions/checkout@v4
+
+      - name: Run Infracost on default branch and update Infracost Cloud
+        run: |
+          infracost breakdown \
+            --path=${{ matrix.environment }}/${{ matrix.region }}/${{ matrix.resources }} \
+            --format=json \
+            --out-file=infracost.json
+
+          infracost upload --path=infracost.json || echo "Always pass main branch runs even if there are policy failures"
+
+  # Update PR status in Infracost Cloud
+  infracost-pull-request-status-update:
+    name: Infracost PR Status Update
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Infracost PR Status Update
+      run: |
+        PR_STATUS="MERGED"
+        if [[ ${{ github.event.pull_request.merged }} = false ]]; then PR_STATUS="CLOSED"; fi
+
+        echo "Updating status of ${{ github.event.pull_request.html_url }} to $PR_STATUS"
+        curl -i \
+          --request POST \
+          --header "Content-Type: application/json" \
+          --header "X-API-Key: $INFRACOST_API_KEY" \
+          --data "{ \"query\": \"mutation {updatePullRequestStatus( url: \\\"${{ github.event.pull_request.html_url }}\\\", status: $PR_STATUS )}\" }" \
+          "https://dashboard.api.infracost.io/graphql";
+      env:
+        INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
